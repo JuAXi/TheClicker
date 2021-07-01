@@ -5,7 +5,7 @@
 #include <fstream>
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")	//更改UI		//Change UI
 
-CString version = L"TheClicker1.0";
+CString version = L"TheClicker1.1";
 CString add = L"https://github.com/JuAXi/TheClicker";
 
 #define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1:0)
@@ -16,7 +16,7 @@ CString add = L"https://github.com/JuAXi/TheClicker";
 #define BUTTON3 5338
 #define BUTTON4 5339
 #define BUTTON_SURE 5340
-#define BUTTON_SElECT_KEY 5341
+#define BUTTON_SELECT_KEY 5341
 #define BUTTON_CANCEL 5342
 #define Input_Time 5343
 #define Output_Name 5344
@@ -24,17 +24,26 @@ CString add = L"https://github.com/JuAXi/TheClicker";
 #define BUTTON_OUTPUT 5346
 #define BUTTON_INPUT 5347
 
-const int minutes = 60;
-const int time_interval = 10;
-const int total_times = minutes * 60 * (1000 / time_interval);
+#define minutes 60
+#define time_interval 10
+#define total_times minutes * 60 * (1000 / time_interval)
 
 bool input_success = false;
 
+struct Press
+{
+	int time;
+	int key;
+	Press* next = NULL;
+};
+
 int key_click = 1;
-int key_press[total_times][254] = { 0 }, count = 0;
-bool i_down[254] = { false };
-POINT point[total_times];
-CString now_key_click = L"当前按键为：";
+Press* key_press_head, * p_key_press0, * p_key_press1;
+int count;
+int click_count = 0;
+bool* i_down;
+POINT* point;
+CString now_key_click = TEXT("当前按键为：");
 
 const HFONT font = CreateFont(18, 9, 0, 0, 600, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, L"宋体");
 
@@ -64,377 +73,486 @@ void GetKey()
 
 void SetNowKeyClick()
 {
-	now_key_click = L"当前按键为：";
-	now_key_click.ReleaseBuffer();
-	CString temp;
 	switch (key_click)
 	{
 	case 1:
-		temp = L"LButton";
+		now_key_click = TEXT("当前按键为：LButton");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 2:
-		temp = L"RButton";
+		now_key_click = TEXT("当前按键为：RButton");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 8:
-		temp = L"Back";
+		now_key_click = TEXT("当前按键为：Back");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 9:
-		temp = L"Tab";
+		now_key_click = TEXT("当前按键为：Tab");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 12:
-		temp = L"Clear";
+		now_key_click = TEXT("当前按键为：Clear");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 13:
-		temp = L"Enter";
+		now_key_click = TEXT("当前按键为：Enter");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 19:
-		temp = L"Pause";
+		now_key_click = TEXT("当前按键为：Pause");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 20:
-		temp = L"Caps Lock";
+		now_key_click = TEXT("当前按键为：Caps Lock");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 32:
-		temp = L"Space";
+		now_key_click = TEXT("当前按键为：Space");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 33:
-		temp = L"Page Up";
+		now_key_click = TEXT("当前按键为：Page Up");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 34:
-		temp = L"Page Down";
+		now_key_click = TEXT("当前按键为：Page Down");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 35:
-		temp = L"End";
+		now_key_click = TEXT("当前按键为：End");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 36:
-		temp = L"Home";
+		now_key_click = TEXT("当前按键为：Home");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 37:
-		temp = L"Left Arrow";
+		now_key_click = TEXT("当前按键为：Left Arrow");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 38:
-		temp = L"Up Arrow";
+		now_key_click = TEXT("当前按键为：Up Arrow");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 39:
-		temp = L"Right Arrow";
+		now_key_click = TEXT("当前按键为：Right Arrow");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 40:
-		temp = L"Down Arrow";
+		now_key_click = TEXT("当前按键为：Down Arrow");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 41:
-		temp = L"Select";
+		now_key_click = TEXT("当前按键为：Select");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 42:
-		temp = L"Print";
+		now_key_click = TEXT("当前按键为：Print");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 43:
-		temp = L"Execute";
+		now_key_click = TEXT("当前按键为：Excute");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 44:
-		temp = L"Snapshot";
+		now_key_click = TEXT("当前按键为：Snapshot");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 45:
-		temp = L"Insert";
+		now_key_click = TEXT("当前按键为：Insert");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 46:
-		temp = L"Delete";
+		now_key_click = TEXT("当前按键为：Delete");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 47:
-		temp = L"Help";
+		now_key_click = TEXT("当前按键为：Help");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 48:
-		temp = L"0";
+		now_key_click = TEXT("当前按键为：0");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 49:
-		temp = L"1";
+		now_key_click = TEXT("当前按键为：1");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 50:
-		temp = L"2";
+		now_key_click = TEXT("当前按键为：2");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 51:
-		temp = L"3";
+		now_key_click = TEXT("当前按键为：3");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 52:
-		temp = L"4";
+		now_key_click = TEXT("当前按键为：4");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 53:
-		temp = L"5";
+		now_key_click = TEXT("当前按键为：5");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 54:
-		temp = L"6";
+		now_key_click = TEXT("当前按键为：6");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 55:
-		temp = L"7";
+		now_key_click = TEXT("当前按键为：7");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 56:
-		temp = L"8";
+		now_key_click = TEXT("当前按键为：8");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 57:
-		temp = L"9";
+		now_key_click = TEXT("当前按键为：9");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 65:
-		temp = L"A";
+		now_key_click = TEXT("当前按键为：A");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 66:
-		temp = L"B";
+		now_key_click = TEXT("当前按键为：B");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 67:
-		temp = L"C";
+		now_key_click = TEXT("当前按键为：C");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 68:
-		temp = L"D";
+		now_key_click = TEXT("当前按键为：D");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 69:
-		temp = L"E";
+		now_key_click = TEXT("当前按键为：E");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 70:
-		temp = L"F";
+		now_key_click = TEXT("当前按键为：F");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 71:
-		temp = L"G";
+		now_key_click = TEXT("当前按键为：G");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 72:
-		temp = L"H";
+		now_key_click = TEXT("当前按键为：H");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 73:
-		temp = L"I";
+		now_key_click = TEXT("当前按键为：I");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 74:
-		temp = L"J";
+		now_key_click = TEXT("当前按键为：J");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 75:
-		temp = L"K";
+		now_key_click = TEXT("当前按键为：K");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 76:
-		temp = L"L";
+		now_key_click = TEXT("当前按键为：L");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 77:
-		temp = L"M";
+		now_key_click = TEXT("当前按键为：M");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 78:
-		temp = L"N";
+		now_key_click = TEXT("当前按键为：N");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 79:
-		temp = L"O";
+		now_key_click = TEXT("当前按键为：O");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 80:
-		temp = L"P";
+		now_key_click = TEXT("当前按键为：P");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 81:
-		temp = L"Q";
+		now_key_click = TEXT("当前按键为：Q");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 82:
-		temp = L"R";
+		now_key_click = TEXT("当前按键为：R");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 83:
-		temp = L"S";
+		now_key_click = TEXT("当前按键为：S");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 84:
-		temp = L"T";
+		now_key_click = TEXT("当前按键为：T");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 85:
-		temp = L"U";
+		now_key_click = TEXT("当前按键为：U");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 86:
-		temp = L"V";
+		now_key_click = TEXT("当前按键为：V");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 87:
-		temp = L"W";
+		now_key_click = TEXT("当前按键为：W");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 88:
-		temp = L"X";
+		now_key_click = TEXT("当前按键为：X");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 89:
-		temp = L"Y";
+		now_key_click = TEXT("当前按键为：Y");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 90:
-		temp = L"Z";
+		now_key_click = TEXT("当前按键为：Z");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 91:
-		temp = L"LWin";
+		now_key_click = TEXT("当前按键为：LWin");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 92:
-		temp = L"RWin";
+		now_key_click = TEXT("当前按键为：RWin");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 93:
-		temp = L"Apps";
+		now_key_click = TEXT("当前按键为：Apps");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 95:
-		temp = L"Sleep";
+		now_key_click = TEXT("当前按键为：Sleep");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 96:
-		temp = L"0";
+		now_key_click = TEXT("当前按键为：0");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 97:
-		temp = L"1";
+		now_key_click = TEXT("当前按键为：1");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 98:
-		temp = L"2";
+		now_key_click = TEXT("当前按键为：2");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 99:
-		temp = L"3";
+		now_key_click = TEXT("当前按键为：3");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 100:
-		temp = L"4";
+		now_key_click = TEXT("当前按键为：4");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 101:
-		temp = L"5";
+		now_key_click = TEXT("当前按键为：5");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 102:
-		temp = L"6";
+		now_key_click = TEXT("当前按键为：6");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 103:
-		temp = L"7";
+		now_key_click = TEXT("当前按键为：7");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 104:
-		temp = L"8";
+		now_key_click = TEXT("当前按键为：8");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 105:
-		temp = L"9";
+		now_key_click = TEXT("当前按键为：9");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 106:
-		temp = L"*";
+		now_key_click = TEXT("当前按键为：*");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 107:
-		temp = L"+";
+		now_key_click = TEXT("当前按键为：+");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 108:
-		temp = L"Enter";
+		now_key_click = TEXT("当前按键为：Enter");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 109:
-		temp = L"-";
+		now_key_click = TEXT("当前按键为：-");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 110:
-		temp = L".";
+		now_key_click = TEXT("当前按键为：.");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 111:
-		temp = L"/";
+		now_key_click = TEXT("当前按键为：/");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 112:
-		temp = L"F1";
+		now_key_click = TEXT("当前按键为：F1");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 113:
-		temp = L"F2";
+		now_key_click = TEXT("当前按键为：F2");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 114:
-		temp = L"F3";
+		now_key_click = TEXT("当前按键为：F3");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 115:
-		temp = L"F4";
+		now_key_click = TEXT("当前按键为：F4");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 116:
-		temp = L"F5";
+		now_key_click = TEXT("当前按键为：F5");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 117:
-		temp = L"F6";
+		now_key_click = TEXT("当前按键为：F6");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 118:
-		temp = L"F7";
+		now_key_click = TEXT("当前按键为：F7");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 119:
-		temp = L"F8";
+		now_key_click = TEXT("当前按键为：F8");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 120:
-		temp = L"F9";
+		now_key_click = TEXT("当前按键为：F9");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 121:
-		temp = L"F10";
+		now_key_click = TEXT("当前按键为：F10");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 122:
-		temp = L"F11";
+		now_key_click = TEXT("当前按键为：F11");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 123:
-		temp = L"F12";
+		now_key_click = TEXT("当前按键为：F12");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 144:
-		temp = L"Num Lock";
+		now_key_click = TEXT("当前按键为：Num Lock");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 145:
-		temp = L"Scroll";
+		now_key_click = TEXT("当前按键为：Scroll");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 160:
-		temp = L"LShift";
+		now_key_click = TEXT("当前按键为：LShift");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 161:
-		temp = L"RShift";
+		now_key_click = TEXT("当前按键为：RShift");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 162:
-		temp = L"LCtrl";
+		now_key_click = TEXT("当前按键为：LCtrl");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 163:
-		temp = L"RCtrl";
+		now_key_click = TEXT("当前按键为：RCtrl");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 164:
-		temp = L"LAlt";
+		now_key_click = TEXT("当前按键为：LAlt");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 165:
-		temp = L"RAlt";
+		now_key_click = TEXT("当前按键为：RAlt");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 173:
-		temp = L"Volume Mute";
+		now_key_click = TEXT("当前按键为：Volume Mute");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 174:
-		temp = L"Volume Down";
+		now_key_click = TEXT("当前按键为：Volume Down");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 175:
-		temp = L"Volume Up";
+		now_key_click = TEXT("当前按键为：Volume Up");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 186:
-		temp = L";";
+		now_key_click = TEXT("当前按键为：;");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 187:
-		temp = L"=";
+		now_key_click = TEXT("当前按键为：=");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 188:
-		temp = L",";
+		now_key_click = TEXT("当前按键为：,");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 189:
-		temp = L"-";
+		now_key_click = TEXT("当前按键为：-");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 190:
-		temp = L".";
+		now_key_click = TEXT("当前按键为：.");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 191:
-		temp = L"/";
+		now_key_click = TEXT("当前按键为：/");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 192:
-		temp = L"`";
+		now_key_click = TEXT("当前按键为：`");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 219:
-		temp = L"[";
+		now_key_click = TEXT("当前按键为：[");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 220:
-		temp = L"\\";
+		now_key_click = TEXT("当前按键为：\\");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 221:
-		temp = L"]";
+		now_key_click = TEXT("当前按键为：]");
+		now_key_click.ReleaseBuffer();
 		break;
 	case 222:
-		temp = L"\'";
+		now_key_click = TEXT("当前按键为：\'");
+		now_key_click.ReleaseBuffer();
 		break;
 	}
-	temp.ReleaseBuffer();
-	now_key_click += temp;
 }
 
 void SetIni()
 {
 	CString temp_key_click;
-	GetPrivateProfileString(L"TheMouseClicker", L"ClickKey", L"1", temp_key_click.GetBuffer(4), 4, L"./TheMouseClicker.ini");
+	GetPrivateProfileString(TEXT("TheMouseClicker"), TEXT("ClickKey"), TEXT("1"), temp_key_click.GetBuffer(4), 4, TEXT("./TheMouseClicker.ini"));
 	temp_key_click.ReleaseBuffer();
 	key_click = _ttoi(temp_key_click);
 	SetNowKeyClick();
 }
 
-void SaveIni()
+void SaveIni(int key_click)
 {
 	CString temp_key_click;
-	temp_key_click.Format(L"%d", key_click);
-	WritePrivateProfileString(L"TheMouseClicker", L"ClickKey", temp_key_click, L"./TheMouseClicker.ini");
+	temp_key_click.Format(TEXT("%d"), key_click);
+	WritePrivateProfileString(TEXT("TheMouseClicker"), TEXT("ClickKey"), temp_key_click, TEXT("./TheMouseClicker.ini"));
 }
 
 void CreateData()
 {
-	CString str = L"./data";
+	CString str = TEXT("./data");
 	if (!PathIsDirectory(str))
 	{
 		CreateDirectory(str, NULL);
@@ -570,27 +688,44 @@ void Click(double count_time)
 
 void Record()
 {
-	int i = 0;
-	bool left_down = false, right_down = false;
+	key_press_head = new Press();
+	p_key_press0 = key_press_head;
+	count = 0;
+	click_count = 0;
+	i_down = new bool[254];
+	point = new POINT[total_times];
+	memset(i_down, 0, sizeof(i_down));
+
 	HWND hwnd = FindWindow(NULL, version);
-	POINT p;
-	while (true)
+	POINT* p_point = point;
+	bool left_down = false, right_down = false;
+
+	while (count < total_times)
 	{
-		GetCursorPos(&p);
-		point[count] = p;
-		for (i = 0; i < 254; i++)
+		GetCursorPos(p_point++);
+		for (int i = 0; i < 254; i++)
 		{
 			if (i != 27)
 			{
 				if (KEY_DOWN(i) == true && i_down[i] == false)
 				{
-					key_press[count][i] = 1;
+					p_key_press1 = new Press();
+					p_key_press1->time = count;
+					p_key_press1->key = i;
+					p_key_press0->next = p_key_press1;
+					p_key_press0 = p_key_press0->next;
 					i_down[i] = true;
+					click_count++;
 				}
-				if (KEY_UP(i) == true && i_down[i] == true)
+				if (i_down[i] == true && KEY_UP(i) == true)
 				{
-					key_press[count][i] = -1;
+					p_key_press1 = new Press();
+					p_key_press1->time = count;
+					p_key_press1->key = -i;
+					p_key_press0->next = p_key_press1;
+					p_key_press0 = p_key_press0->next;
 					i_down[i] = false;
+					click_count++;
 				}
 			}
 		}
@@ -601,26 +736,29 @@ void Record()
 		count++;
 		Sleep(time_interval);
 	}
-	CreateWindowEx(NULL, L"Record_Output", L"输入保存的文件名（不带后缀）", WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE | WM_CTLCOLORSTATIC, 150, 150, 400, 200, hwnd, NULL, NULL, NULL);
+	CreateWindowEx(NULL, L"Record_Output", L"输入保存的文件名（不带后缀）", WS_VISIBLE | WS_SYSMENU | WS_MINIMIZEBOX | WM_CTLCOLORSTATIC, 150, 150, 400, 200, hwnd, NULL, NULL, NULL);
 	MSG msg_newpage;
 	while (GetMessageW(&msg_newpage, NULL, 0, 0))
 	{
 		TranslateMessage(&msg_newpage);
 		DispatchMessageW(&msg_newpage);
 	}
+	UpdateWindow(hwnd);
+	p_key_press0 = key_press_head;
+	while (p_key_press0->next != NULL)
+	{
+		p_key_press1 = p_key_press0->next;
+		delete p_key_press0;
+		p_key_press0 = p_key_press1;
+	}
+	delete p_key_press0;
+	delete[] point;
+	delete[] i_down;
 }
 
 void Display()
 {
-	HWND hwnd = FindWindow(NULL, version);
-	CreateWindowEx(NULL, L"Record_Input", L"输入保存的文件名（不带后缀）", WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE | WM_CTLCOLORSTATIC, 150, 150, 400, 200, hwnd, NULL, NULL, NULL);
-	MSG msg_newpage;
-	while (GetMessageW(&msg_newpage, NULL, 0, 0))
-	{
-		TranslateMessage(&msg_newpage);
-		DispatchMessageW(&msg_newpage);
-	}
-	Sleep(10);
+	Sleep(100);
 	if (input_success == true)
 	{
 		bool display_continue = true;
@@ -628,47 +766,67 @@ void Display()
 		double time0 = 0, time1 = 0;
 		while (display_continue == true)
 		{
+			p_key_press0 = key_press_head;
+			if (p_key_press0->next != NULL)
+				p_key_press0 = p_key_press0->next;
 			i = 0;
 			while (i <= count)
 			{
 				SetCursorPos(point[i].x, point[i].y);
-				for (int j = 1; j < 254; j++)
+				if (i == p_key_press0->time)
 				{
-					if (j < 6)
+					if (p_key_press0->key < 6)
 					{
-						switch (j)
+						if (p_key_press0->key == 1)
 						{
-						case 1:
-							if (key_press[i][j] == 1)
-								mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-							if (key_press[i][j] == -1)
-								mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-							break;
-						case 2:
-							if (key_press[i][j] == 1)
-								mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0);
-							if (key_press[i][j] == -1)
-								mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0);
-							break;
-						case 4:
-							if (key_press[i][j] == 1)
-								mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, 0);
-							if (key_press[i][j] == -1)
-								mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, 0);
-							break;
-						default:
-							break;
+							mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+							if (p_key_press0->next != NULL)
+								p_key_press0 = p_key_press0->next;
+						}
+						else if (p_key_press0->key == -1)
+						{
+							mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+							if (p_key_press0->next != NULL)
+								p_key_press0 = p_key_press0->next;
+						}
+						else if (p_key_press0->key == 2)
+						{
+							mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0);
+							if (p_key_press0->next != NULL)
+								p_key_press0 = p_key_press0->next;
+						}
+						else if (p_key_press0->key == -2)
+						{
+							mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0);
+							if (p_key_press0->next != NULL)
+								p_key_press0 = p_key_press0->next;
+						}
+						else if (p_key_press0->key == 4)
+						{
+							mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, 0);
+							if (p_key_press0->next != NULL)
+								p_key_press0 = p_key_press0->next;
+						}
+						else if (p_key_press0->key == -4)
+						{
+							mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, 0);
+							if (p_key_press0->next != NULL)
+								p_key_press0 = p_key_press0->next;
 						}
 					}
 					else
 					{
-						if (key_press[i][j] > 0)
+						if (p_key_press0->key > 0)
 						{
-							keybd_event(j, 0, 0, 0);
+							keybd_event(p_key_press0->key, 0, 0, 0);
+							if (p_key_press0->next != NULL)
+								p_key_press0 = p_key_press0->next;
 						}
-						if (key_press[i][j] < 0)
+						if (p_key_press0->key < 0)
 						{
-							keybd_event(j, 0, KEYEVENTF_KEYUP, 0);
+							keybd_event(-p_key_press0->key, 0, KEYEVENTF_KEYUP, 0);
+							if (p_key_press0->next != NULL)
+								p_key_press0 = p_key_press0->next;
 						}
 					}
 
@@ -696,9 +854,18 @@ void Display()
 		}
 	}
 	input_success = false;
+	p_key_press0 = key_press_head;
+	while (p_key_press0->next != NULL)
+	{
+		p_key_press1 = p_key_press0->next;
+		delete p_key_press0;
+		p_key_press0 = p_key_press1;
+	}
+	delete p_key_press0;
+	delete[] point;
 }
 
-LRESULT WINAPI RecordInputWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK RecordInputWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND name_get = NULL, button_ok;
 	switch (msg)
@@ -711,22 +878,14 @@ LRESULT WINAPI RecordInputWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		SendMessage(button_ok, WM_SETFONT, (WPARAM)font, TRUE);
 		break;
 	}
-	case WM_CTLCOLORSTATIC:
-	{
-		if ((HWND)lParam == GetDlgItem(hwnd, 1))//获得指定标签句柄用来对比
-		{
-			SetTextColor((HDC)wParam, RGB(0, 0, 0));//设置文本颜色
-			SetBkMode((HDC)wParam, TRANSPARENT);//设置背景透明
-		}
-		return (INT_PTR)GetStockObject((NULL_BRUSH));
-		break;
-	}
 	case WM_COMMAND:
 	{
 		switch (LOWORD(wParam))
 		{
 		case BUTTON_INPUT:
 		{
+			
+
 			CString temp;
 			CString storage_address = L"./data/";
 			GetDlgItemText(hwnd, Input_Name, temp.GetBuffer(100), 100);
@@ -737,7 +896,10 @@ LRESULT WINAPI RecordInputWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			std::ifstream input(storage_address);
 			if (input.is_open())
 			{
-				input >> count;
+
+				input >> count >> click_count;
+
+				point = new POINT[total_times];
 				for (int i = 0; i <= count; i++)
 				{
 					input >> point[i].x;
@@ -746,12 +908,24 @@ LRESULT WINAPI RecordInputWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 				{
 					input >> point[i].y;
 				}
-				while (!input.eof())
+
+				key_press_head = new Press();
+				p_key_press0 = key_press_head;
+
+				for (int i = 0; i < click_count; i++)
 				{
-					input >> a >> b >> key_press[a][b];
+					p_key_press1 = new Press();
+					input >> p_key_press1->time >> p_key_press1->key;
+					p_key_press0->next = p_key_press1;
+					p_key_press0 = p_key_press0->next;
 				}
+
 				input_success = true;
 				input.close();
+				std::thread display(Display);
+				SendMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, NULL);
+				Sleep(10);
+				display.detach();
 				SendMessage(hwnd, WM_CLOSE, NULL, NULL);
 			}
 			else
@@ -774,7 +948,7 @@ LRESULT WINAPI RecordInputWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-LRESULT WINAPI RecordOutputReact(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK RecordOutputReact(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND name_get = NULL, button_ok;
 	switch (msg)
@@ -785,16 +959,6 @@ LRESULT WINAPI RecordOutputReact(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		button_ok = CreateWindow(L"button", L"确定", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 165, 100, 70, 50, hwnd, (HMENU)BUTTON_OUTPUT, NULL, NULL);
 		SendMessage(name_get, WM_SETFONT, (WPARAM)font, TRUE);
 		SendMessage(button_ok, WM_SETFONT, (WPARAM)font, TRUE);
-		break;
-	}
-	case WM_CTLCOLORSTATIC:
-	{
-		if ((HWND)lParam == GetDlgItem(hwnd, 1))//获得指定标签句柄用来对比
-		{
-			SetTextColor((HDC)wParam, RGB(0, 0, 0));//设置文本颜色
-			SetBkMode((HDC)wParam, TRANSPARENT);//设置背景透明
-		}
-		return (INT_PTR)GetStockObject((NULL_BRUSH));
 		break;
 	}
 	case WM_COMMAND:
@@ -818,7 +982,7 @@ LRESULT WINAPI RecordOutputReact(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				std::ofstream output;
 				CreateData();
 				output.open(storage_address);
-				output << count << std::endl;
+				output << count << ' ' << click_count << std::endl;
 				for (int i = 0; i <= count; i++)
 				{
 					output << point[i].x << " ";
@@ -829,15 +993,11 @@ LRESULT WINAPI RecordOutputReact(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					output << point[i].y << " ";
 				}
 				output << std::endl;
-				for (int i = 0; i <= count; i++)
+				p_key_press0 = key_press_head;
+				while (p_key_press0->next != NULL)
 				{
-					for (int j = 0; j < 254; j++)
-					{
-						if (key_press[i][j] != 0)
-						{
-							output << i << ' ' << j << ' ' << key_press[i][j] << std::endl;
-						}
-					}
+					p_key_press0 = p_key_press0->next;
+					output << p_key_press0->time << ' ' << p_key_press0->key << std::endl;
 				}
 				output.close();
 				SendMessage(hwnd, WM_CLOSE, NULL, NULL);
@@ -860,7 +1020,7 @@ LRESULT WINAPI RecordOutputReact(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-LRESULT WINAPI TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND text1, time_get = NULL, button_okl, button_cancel, button_okr, text2, main_win;
 	static HWND hwnd_now_key;
@@ -875,7 +1035,7 @@ LRESULT WINAPI TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		text2 = CreateWindow(L"static", L"开始后，按鼠标滚轮停止，按‘ESC’结束", WS_CHILD | WS_VISIBLE, 5, 70, 400, 30, hwnd, (HMENU)1, NULL, 0);
 		time_get = CreateWindow(L"edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER, 10, 35, 195, 30, hwnd, (HMENU)Input_Time, NULL, NULL);
 		button_okl = CreateWindow(L"button", L"开点！", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, 100, 70, 50, hwnd, (HMENU)BUTTON_SURE, NULL, NULL);
-		button_okr = CreateWindow(L"button", L"修改按键", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 100, 90, 50, hwnd, (HMENU)BUTTON_SElECT_KEY, NULL, NULL);
+		button_okr = CreateWindow(L"button", L"修改按键", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 100, 90, 50, hwnd, (HMENU)BUTTON_SELECT_KEY, NULL, NULL);
 		button_cancel = CreateWindow(L"button", L"取消", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 100, 70, 50, hwnd, (HMENU)BUTTON_CANCEL, NULL, NULL);
 		SendMessage(text1, WM_SETFONT, (WPARAM)font, TRUE);
 		SendMessage(button_okl, WM_SETFONT, (WPARAM)font, TRUE);
@@ -923,7 +1083,7 @@ LRESULT WINAPI TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		}
-		case BUTTON_SElECT_KEY:
+		case BUTTON_SELECT_KEY:
 		{
 			std::thread getkey(GetKey);
 			getkey.detach();
@@ -959,7 +1119,7 @@ LRESULT WINAPI TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-LRESULT WINAPI TipsProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK TipsProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND text;
 	switch (msg)
@@ -993,7 +1153,7 @@ LRESULT WINAPI TipsProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-LRESULT WINAPI WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hwndButton1, hwndButton2, hwndButton3, hwndButton4, text;
 	bool record_button = false;
@@ -1040,10 +1200,6 @@ LRESULT WINAPI WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		case BUTTON2:
 		{
-			memset(point, 0, sizeof(point));
-			memset(key_press, 0, sizeof(key_press));
-			memset(i_down, 0, sizeof(i_down));
-			count = 0;
 			record_button = true;
 			MessageBox(hwnd, L"点击确定开始录制(按‘ESC’结束)", L"准备开始", MB_OK);
 			UpdateWindow(hwnd);
@@ -1051,14 +1207,14 @@ LRESULT WINAPI WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		case BUTTON3:
 		{
-			memset(point, 0, sizeof(point));
-			memset(key_press, 0, sizeof(key_press));
-			memset(i_down, 0, sizeof(i_down));
-			count = 0;
-			std::thread display(Display);
+			CreateWindowEx(NULL, L"Record_Input", L"输入保存的文件名（不带后缀）", WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE | WM_CTLCOLORSTATIC, 150, 150, 400, 200, hwnd, NULL, NULL, NULL);
+			MSG msg_newpage;
+			while (GetMessageW(&msg_newpage, NULL, 0, 0))
+			{
+				TranslateMessage(&msg_newpage);
+				DispatchMessageW(&msg_newpage);
+			}
 			SendMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, NULL);
-			Sleep(10);
-			display.detach();
 			UpdateWindow(hwnd);
 			break;
 		}
@@ -1075,17 +1231,16 @@ LRESULT WINAPI WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (record_button)
 		{
 			std::thread record(Record);
-			Sleep(10);
-			record.detach();
 			SendMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, NULL);
+			Sleep(100);
+			record.detach();
 			record_button = false;
-			UpdateWindow(hwnd);
 			break;
 		}
 	}
 	case WM_CLOSE:
 	{
-		SaveIni();
+		SaveIni(key_click);
 		break;
 	}
 	case WM_DESTROY:
@@ -1098,14 +1253,11 @@ LRESULT WINAPI WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	//init
 	CreateData();
 	SetIni();
-	memset(point, 0, sizeof(point));
-	memset(key_press, 0, sizeof(key_press));
-	memset(i_down, 0, sizeof(i_down));
 
 	WNDCLASSEX main_window, time_input, record_input, record_output, tips;
 
@@ -1128,7 +1280,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	time_input.lpfnWndProc = TimeWinProc;
 	time_input.cbClsExtra = 0;
 	time_input.cbWndExtra = 0;
-	time_input.hInstance = hInstance;
+	time_input.hInstance = NULL;
 	time_input.hIcon = NULL;
 	time_input.hCursor = NULL;
 	time_input.hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
@@ -1141,7 +1293,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	record_input.lpfnWndProc = RecordInputWinProc;
 	record_input.cbClsExtra = 0;
 	record_input.cbWndExtra = 0;
-	record_input.hInstance = hInstance;
+	record_input.hInstance = NULL;
 	record_input.hIcon = NULL;
 	record_input.hCursor = NULL;
 	record_input.hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
@@ -1154,7 +1306,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	record_output.lpfnWndProc = RecordOutputReact;
 	record_output.cbClsExtra = 0;
 	record_output.cbWndExtra = 0;
-	record_output.hInstance = hInstance;
+	record_output.hInstance = NULL;
 	record_output.hIcon = NULL;
 	record_output.hCursor = NULL;
 	record_output.hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
@@ -1167,7 +1319,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	tips.lpfnWndProc = TipsProc;
 	tips.cbClsExtra = 0;
 	tips.cbWndExtra = 0;
-	tips.hInstance = hInstance;
+	tips.hInstance = NULL;
 	tips.hIcon = NULL;
 	tips.hCursor = NULL;
 	tips.hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
@@ -1209,15 +1361,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//创建窗口
 	HWND main_win = CreateWindowEx(NULL, L"Main", version, WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE | WM_CTLCOLORSTATIC, 100, 100, 300, 450, NULL, NULL, hInstance, NULL);
 
-	//ShowWindow(main_win, SW_SHOW);
+	ShowWindow(main_win, SW_SHOW);
 	UpdateWindow(main_win);
 
 	//数据刷新
 	MSG msg;
 	while (GetMessageW(&msg, NULL, 0, 0))
 	{
-		//TranslateMessage(&msg);	//仅键盘 
+		TranslateMessage(&msg);	
 		DispatchMessageW(&msg);
 	}
+	delete key_press_head;
 	return 0;
 }
