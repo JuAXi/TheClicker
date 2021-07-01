@@ -1026,12 +1026,15 @@ LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	static HWND hwnd_now_key;
 	main_win = FindWindow(NULL, version);
 	double count_time = 0;
+	HDC hdc;
+	PAINTSTRUCT ps;
 	switch (msg)
 	{
 	case WM_PAINT:
 	{
+		hdc = BeginPaint(hwnd, &ps);
 		text1 = CreateWindow(L"static", L"请输入时间（单位:秒）", WS_CHILD | WS_VISIBLE, 10, 10, 200, 30, hwnd, (HMENU)1, NULL, 0);
-		hwnd_now_key = CreateWindow(L"edit", now_key_click, ES_READONLY | WS_CHILD | WS_VISIBLE, 210, 35, 180, 18, hwnd, (HMENU)1, NULL, 0);
+		TextOutW(hdc, 210, 35, now_key_click, now_key_click.GetLength());
 		text2 = CreateWindow(L"static", L"开始后，按鼠标滚轮停止，按‘ESC’结束", WS_CHILD | WS_VISIBLE, 5, 70, 400, 30, hwnd, (HMENU)1, NULL, 0);
 		time_get = CreateWindow(L"edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER, 10, 35, 195, 30, hwnd, (HMENU)Input_Time, NULL, NULL);
 		button_okl = CreateWindow(L"button", L"开点！", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, 100, 70, 50, hwnd, (HMENU)BUTTON_SURE, NULL, NULL);
@@ -1042,6 +1045,7 @@ LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		SendMessage(button_okr, WM_SETFONT, (WPARAM)font, TRUE);
 		SendMessage(button_cancel, WM_SETFONT, (WPARAM)font, TRUE);
 		SendMessage(time_get, WM_SETFONT, (WPARAM)font, TRUE);
+		EndPaint(hwnd, &ps);
 		break;
 	}
 	case WM_CTLCOLORSTATIC:
@@ -1086,7 +1090,6 @@ LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case BUTTON_SELECT_KEY:
 		{
 			std::thread getkey(GetKey);
-			getkey.detach();
 			CreateWindowEx(NULL, L"Tips", L"提示", WS_VISIBLE | WM_CTLCOLORSTATIC, 300, 300, 250, 100, hwnd, NULL, NULL, NULL);
 			MSG msg_newpage;
 			while (GetMessageW(&msg_newpage, NULL, 0, 0))
@@ -1094,9 +1097,10 @@ LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				TranslateMessage(&msg_newpage);
 				DispatchMessageW(&msg_newpage);
 			}
+			getkey.detach();
 			SetNowKeyClick();
-			SetWindowText(hwnd_now_key, now_key_click);
-			SendMessage(hwnd, WM_PAINT, NULL, NULL);
+			InvalidateRect(hwnd, NULL, true);
+			UpdateWindow(hwnd);
 			break;
 		}
 		case BUTTON_CANCEL:
@@ -1189,7 +1193,7 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 		case BUTTON1:
 		{
-			CreateWindowEx(NULL, L"Time_Input", L"输入", WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE | WM_CTLCOLORSTATIC, 150, 150, 410, 200, hwnd, NULL, NULL, NULL);
+			CreateWindowEx(NULL, L"Time_Input", L"输入", WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE | WM_CTLCOLORSTATIC, 150, 150, 410, 200, NULL, NULL, NULL, NULL);
 			MSG msg_newpage;
 			while (GetMessageW(&msg_newpage, NULL, 0, 0))
 			{
