@@ -3,9 +3,10 @@
 #include <atlstr.h>
 #include <thread>
 #include <fstream>
+#include <ShlObj.h>
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")	//更改UI		//Change UI
 
-CString version = L"TheClicker1.1";
+CString version = L"TheClicker1.2";
 CString add = L"https://github.com/JuAXi/TheClicker";
 
 #define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1:0)
@@ -550,15 +551,6 @@ void SaveIni(int key_click)
 	WritePrivateProfileString(TEXT("TheMouseClicker"), TEXT("ClickKey"), temp_key_click, TEXT("./TheMouseClicker.ini"));
 }
 
-void CreateData()
-{
-	CString str = TEXT("./data");
-	if (!PathIsDirectory(str))
-	{
-		CreateDirectory(str, NULL);
-	}
-}
-
 bool IsSameName(CString output_txt)
 {
 	std::ifstream input(output_txt);
@@ -736,14 +728,61 @@ void Record()
 		count++;
 		Sleep(time_interval);
 	}
-	CreateWindowEx(NULL, L"Record_Output", L"输入保存的文件名（不带后缀）", WS_VISIBLE | WS_SYSMENU | WS_MINIMIZEBOX | WM_CTLCOLORSTATIC, 150, 150, 400, 200, hwnd, NULL, NULL, NULL);
-	MSG msg_newpage;
-	while (GetMessageW(&msg_newpage, NULL, 0, 0))
+
+	HRESULT hresult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hresult))
 	{
-		TranslateMessage(&msg_newpage);
-		DispatchMessageW(&msg_newpage);
+		IFileDialog* ifiledialog = NULL;
+		hresult = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&ifiledialog));
+		if (SUCCEEDED(hresult))
+		{
+			hresult = ifiledialog->SetDefaultExtension(L"txt");
+			COMDLG_FILTERSPEC file_type[] =
+			{
+				{L"Text files", L"*.txt"},
+			};
+			hresult = ifiledialog->SetFileTypes(ARRAYSIZE(file_type), file_type);
+			hresult = ifiledialog->SetFileTypeIndex(1);
+			hresult = ifiledialog->Show(NULL);
+			if (SUCCEEDED(hresult))
+			{
+				IShellItem* ishellitem;
+				hresult = ifiledialog->GetResult(&ishellitem);
+				if (SUCCEEDED(hresult))
+				{
+					LPWSTR file_path = NULL;
+						hresult = ishellitem->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &file_path);
+
+						CString storage_address = file_path;
+						std::ofstream output;
+						output.open(storage_address);
+						output << count << ' ' << click_count << std::endl;
+						for (int i = 0; i <= count; i++)
+						{
+							output << point[i].x << " ";
+						}
+					output << std::endl;
+					for (int i = 0; i <= count; i++)
+					{
+						output << point[i].y << " ";
+					}
+					output << std::endl;
+					p_key_press0 = key_press_head;
+					while (p_key_press0->next != NULL)
+					{
+						p_key_press0 = p_key_press0->next;
+						output << p_key_press0->time << ' ' << p_key_press0->key << std::endl;
+					}
+					output.close();
+
+					ishellitem->Release();
+				}
+			}
+			ifiledialog->Release();
+		}
+		CoUninitialize();
 	}
-	UpdateWindow(hwnd);
+
 	p_key_press0 = key_press_head;
 	while (p_key_press0->next != NULL)
 	{
@@ -863,161 +902,6 @@ void Display()
 	}
 	delete p_key_press0;
 	delete[] point;
-}
-
-LRESULT CALLBACK RecordInputWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	HWND name_get = NULL, button_ok;
-	switch (msg)
-	{
-	case WM_CREATE:
-	{
-		name_get = CreateWindow(L"edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER, 10, 35, 360, 30, hwnd, (HMENU)Input_Name, NULL, NULL);
-		button_ok = CreateWindow(L"button", L"确定", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 165, 100, 70, 50, hwnd, (HMENU)BUTTON_INPUT, NULL, NULL);
-		SendMessage(name_get, WM_SETFONT, (WPARAM)font, TRUE);
-		SendMessage(button_ok, WM_SETFONT, (WPARAM)font, TRUE);
-		break;
-	}
-	case WM_COMMAND:
-	{
-		switch (LOWORD(wParam))
-		{
-		case BUTTON_INPUT:
-		{
-			
-
-			CString temp;
-			CString storage_address = L"./data/";
-			GetDlgItemText(hwnd, Input_Name, temp.GetBuffer(100), 100);
-			temp.ReleaseBuffer();
-			temp += ".txt";
-			storage_address += temp;
-			int a = 0, b = 0;
-			std::ifstream input(storage_address);
-			if (input.is_open())
-			{
-
-				input >> count >> click_count;
-
-				point = new POINT[total_times];
-				for (int i = 0; i <= count; i++)
-				{
-					input >> point[i].x;
-				}
-				for (int i = 0; i <= count; i++)
-				{
-					input >> point[i].y;
-				}
-
-				key_press_head = new Press();
-				p_key_press0 = key_press_head;
-
-				for (int i = 0; i < click_count; i++)
-				{
-					p_key_press1 = new Press();
-					input >> p_key_press1->time >> p_key_press1->key;
-					p_key_press0->next = p_key_press1;
-					p_key_press0 = p_key_press0->next;
-				}
-
-				input_success = true;
-				input.close();
-				std::thread display(Display);
-				SendMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, NULL);
-				Sleep(10);
-				display.detach();
-				SendMessage(hwnd, WM_CLOSE, NULL, NULL);
-			}
-			else
-			{
-				MessageBox(NULL, L"找不到文件", L"Warning", MB_OK);
-			}
-		}
-		}
-	}
-	case WM_CLOSE:
-	{
-		break;
-	}
-	case WM_DESTROY:
-	{
-		PostQuitMessage(0);
-		break;
-	}
-	}
-	return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
-LRESULT CALLBACK RecordOutputReact(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	HWND name_get = NULL, button_ok;
-	switch (msg)
-	{
-	case WM_CREATE:
-	{
-		name_get = CreateWindow(L"edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER, 10, 35, 360, 30, hwnd, (HMENU)Output_Name, NULL, NULL);
-		button_ok = CreateWindow(L"button", L"确定", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 165, 100, 70, 50, hwnd, (HMENU)BUTTON_OUTPUT, NULL, NULL);
-		SendMessage(name_get, WM_SETFONT, (WPARAM)font, TRUE);
-		SendMessage(button_ok, WM_SETFONT, (WPARAM)font, TRUE);
-		break;
-	}
-	case WM_COMMAND:
-	{
-		switch (LOWORD(wParam))
-		{
-		case BUTTON_OUTPUT:
-		{
-			CString temp;
-			CString storage_address = L"./data/";
-			GetDlgItemText(hwnd, Output_Name, temp.GetBuffer(100), 100);
-			temp.ReleaseBuffer();
-			temp += ".txt";
-			storage_address += temp;
-			if (IsSameName(storage_address))
-			{
-				MessageBox(NULL, L"已存在同名文件", L"Warning", MB_OK);
-			}
-			else
-			{
-				std::ofstream output;
-				CreateData();
-				output.open(storage_address);
-				output << count << ' ' << click_count << std::endl;
-				for (int i = 0; i <= count; i++)
-				{
-					output << point[i].x << " ";
-				}
-				output << std::endl;
-				for (int i = 0; i <= count; i++)
-				{
-					output << point[i].y << " ";
-				}
-				output << std::endl;
-				p_key_press0 = key_press_head;
-				while (p_key_press0->next != NULL)
-				{
-					p_key_press0 = p_key_press0->next;
-					output << p_key_press0->time << ' ' << p_key_press0->key << std::endl;
-				}
-				output.close();
-				SendMessage(hwnd, WM_CLOSE, NULL, NULL);
-				MessageBox(NULL, storage_address, storage_address, MB_OK);
-				break;
-			}
-		}
-		}
-	case WM_CLOSE:
-	{
-		break;
-	}
-	case WM_DESTROY:
-	{
-		PostQuitMessage(0);
-		break;
-	}
-	}
-	}
-	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -1211,13 +1095,71 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		case BUTTON3:
 		{
-			CreateWindowEx(NULL, L"Record_Input", L"输入保存的文件名（不带后缀）", WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE | WM_CTLCOLORSTATIC, 150, 150, 400, 200, hwnd, NULL, NULL, NULL);
-			MSG msg_newpage;
-			while (GetMessageW(&msg_newpage, NULL, 0, 0))
+
+			IFileDialog* ifiledialog = NULL;
+			HRESULT hresult = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&ifiledialog));
+			if (SUCCEEDED(hresult))
 			{
-				TranslateMessage(&msg_newpage);
-				DispatchMessageW(&msg_newpage);
+				DWORD dwFlags;
+				hresult = ifiledialog->GetOptions(&dwFlags);
+				hresult = ifiledialog->SetOptions(dwFlags);
+				COMDLG_FILTERSPEC file_type[] =
+				{
+					{L"Text files", L"*.txt"},
+				};
+				hresult = ifiledialog->SetFileTypes(ARRAYSIZE(file_type), file_type);
+				hresult = ifiledialog->SetFileTypeIndex(1);
+				hresult = ifiledialog->Show(NULL);
+				if (SUCCEEDED(hresult))
+				{
+					IShellItem* ishellitem;
+					hresult = ifiledialog->GetResult(&ishellitem);
+					LPWSTR file_path = NULL;
+					hresult = ishellitem->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &file_path);
+					if (SUCCEEDED(hresult))
+					{
+						CString storage_address = file_path;
+						int a = 0, b = 0;
+						std::ifstream input(storage_address);
+						if (input.is_open())
+						{
+
+							input >> count >> click_count;
+
+							point = new POINT[total_times];
+							for (int i = 0; i <= count; i++)
+							{
+								input >> point[i].x;
+							}
+							for (int i = 0; i <= count; i++)
+							{
+								input >> point[i].y;
+							}
+
+							key_press_head = new Press();
+							p_key_press0 = key_press_head;
+
+							for (int i = 0; i < click_count; i++)
+							{
+								p_key_press1 = new Press();
+								input >> p_key_press1->time >> p_key_press1->key;
+								p_key_press0->next = p_key_press1;
+								p_key_press0 = p_key_press0->next;
+							}
+
+							input_success = true;
+							input.close();
+							std::thread display(Display);
+							Sleep(10);
+							display.detach();
+						}
+					}
+					CoTaskMemFree(file_path);
+					ishellitem->Release();
+				}
+				ifiledialog->Release();
 			}
+
 			SendMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, NULL);
 			UpdateWindow(hwnd);
 			break;
@@ -1260,7 +1202,6 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	//init
-	CreateData();
 	SetIni();
 
 	WNDCLASSEX main_window, time_input, record_input, record_output, tips;
@@ -1292,32 +1233,6 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	time_input.lpszClassName = L"Time_Input";
 	time_input.hIconSm = NULL;
 
-	record_input.cbSize = sizeof(record_input);
-	record_input.style = CS_VREDRAW | CS_HREDRAW;
-	record_input.lpfnWndProc = RecordInputWinProc;
-	record_input.cbClsExtra = 0;
-	record_input.cbWndExtra = 0;
-	record_input.hInstance = NULL;
-	record_input.hIcon = NULL;
-	record_input.hCursor = NULL;
-	record_input.hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
-	record_input.lpszMenuName = NULL;
-	record_input.lpszClassName = L"Record_Input";
-	record_input.hIconSm = NULL;
-
-	record_output.cbSize = sizeof(record_output);
-	record_output.style = CS_VREDRAW | CS_HREDRAW;
-	record_output.lpfnWndProc = RecordOutputReact;
-	record_output.cbClsExtra = 0;
-	record_output.cbWndExtra = 0;
-	record_output.hInstance = NULL;
-	record_output.hIcon = NULL;
-	record_output.hCursor = NULL;
-	record_output.hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
-	record_output.lpszMenuName = NULL;
-	record_output.lpszClassName = L"Record_Output";
-	record_output.hIconSm = NULL;
-
 	tips.cbSize = sizeof(tips);
 	tips.style = CS_VREDRAW | CS_HREDRAW;
 	tips.lpfnWndProc = TipsProc;
@@ -1344,18 +1259,6 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		return 0;
 	}
 
-	if (0 == RegisterClassExW(&record_input))
-	{
-		MessageBox(NULL, L"record input wrong", L"Regist", MB_OK);
-		return 0;
-	}
-
-	if (0 == RegisterClassExW(&record_output))
-	{
-		MessageBox(NULL, L"record output wrong", L"Regist", MB_OK);
-		return 0;
-	}
-
 	if (0 == RegisterClassExW(&tips))
 	{
 		MessageBox(NULL, L"tips wrong", L"Regist", MB_OK);
@@ -1372,9 +1275,8 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	MSG msg;
 	while (GetMessageW(&msg, NULL, 0, 0))
 	{
-		TranslateMessage(&msg);	
+		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
 	}
-	delete key_press_head;
 	return 0;
 }
