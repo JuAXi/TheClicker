@@ -6,7 +6,7 @@
 #include <ShlObj.h>
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")	//更改UI		//Change UI
 
-CString version = L"TheClicker1.2";
+CString version = L"TheClicker1.3";
 CString add = L"https://github.com/JuAXi/TheClicker";
 
 #define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1:0)
@@ -697,7 +697,7 @@ void Record()
 		GetCursorPos(p_point++);
 		for (int i = 0; i < 254; i++)
 		{
-			if (i != 27)
+			if (i != 27 && i != 17)
 			{
 				if (KEY_DOWN(i) == true && i_down[i] == false)
 				{
@@ -728,6 +728,17 @@ void Record()
 		count++;
 		Sleep(time_interval);
 	}
+
+	p_key_press0 = key_press_head;
+	if (p_key_press0->next != NULL)
+		p_key_press0 = p_key_press0->next;
+	while ((p_key_press0->next != NULL) && (p_key_press0->time == 0))
+	{
+		click_count--;
+		p_key_press0 = p_key_press0->next;
+	}
+	if (p_key_press0->time == 0)
+		click_count--;
 
 	HRESULT hresult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hresult))
@@ -771,7 +782,8 @@ void Record()
 					while (p_key_press0->next != NULL)
 					{
 						p_key_press0 = p_key_press0->next;
-						output << p_key_press0->time << ' ' << p_key_press0->key << std::endl;
+						if (p_key_press0->time != 0)
+							output << p_key_press0->time << ' ' << p_key_press0->key << std::endl;
 					}
 					output.close();
 
@@ -814,7 +826,7 @@ void Display()
 				SetCursorPos(point[i].x, point[i].y);
 				if (i == p_key_press0->time)
 				{
-					if (p_key_press0->key < 6)
+					if (p_key_press0->key < 6 && p_key_press0->key > -6)
 					{
 						if (p_key_press0->key == 1)
 						{
@@ -904,6 +916,7 @@ void Display()
 	delete[] point;
 }
 
+/*连点器功能窗口*/
 LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND text1, time_get = NULL, button_okl, button_cancel, button_okr, text2, main_win;
@@ -917,10 +930,10 @@ LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 	{
 		hdc = BeginPaint(hwnd, &ps);
-		text1 = CreateWindow(L"static", L"请输入时间（单位:秒）", WS_CHILD | WS_VISIBLE, 10, 10, 200, 30, hwnd, (HMENU)1, NULL, 0);
-		TextOutW(hdc, 210, 35, now_key_click, now_key_click.GetLength());
+		text1 = CreateWindow(L"static", L"请输入时间（单位:毫秒）", WS_CHILD | WS_VISIBLE, 10, 10, 220, 30, hwnd, (HMENU)1, NULL, 0);
+		TextOutW(hdc, 230, 35, now_key_click, now_key_click.GetLength());
 		text2 = CreateWindow(L"static", L"开始后，按鼠标滚轮停止，按‘ESC’结束", WS_CHILD | WS_VISIBLE, 5, 70, 400, 30, hwnd, (HMENU)1, NULL, 0);
-		time_get = CreateWindow(L"edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER, 10, 35, 195, 30, hwnd, (HMENU)Input_Time, NULL, NULL);
+		time_get = CreateWindow(L"edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | ES_NUMBER, 10, 35, 195, 30, hwnd, (HMENU)Input_Time, NULL, NULL);
 		button_okl = CreateWindow(L"button", L"开点！", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, 100, 70, 50, hwnd, (HMENU)BUTTON_SURE, NULL, NULL);
 		button_okr = CreateWindow(L"button", L"修改按键", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 100, 90, 50, hwnd, (HMENU)BUTTON_SELECT_KEY, NULL, NULL);
 		button_cancel = CreateWindow(L"button", L"取消", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 100, 70, 50, hwnd, (HMENU)BUTTON_CANCEL, NULL, NULL);
@@ -934,10 +947,10 @@ LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_CTLCOLORSTATIC:
 	{
-		if ((HWND)lParam == GetDlgItem(hwnd, 1))//获得指定标签句柄用来对比
+		if ((HWND)lParam == GetDlgItem(hwnd, 1))
 		{
-			SetTextColor((HDC)wParam, RGB(0, 0, 0));//设置文本颜色
-			SetBkMode((HDC)wParam, TRANSPARENT);//设置背景透明
+			SetTextColor((HDC)wParam, RGB(0, 0, 0));
+			SetBkMode((HDC)wParam, TRANSPARENT);
 		}
 		return (INT_PTR)GetStockObject((NULL_BRUSH));
 		break;
@@ -949,25 +962,20 @@ LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case BUTTON_SURE:
 		{
 			CString temp;
-			GetDlgItemText(hwnd, Input_Time, temp.GetBuffer(11), 11);
+			GetDlgItemText(hwnd, Input_Time, temp.GetBuffer(7), 7);
 			temp.ReleaseBuffer();
 			double count_time = _wtof(temp);
-			if (count_time < 0 || count_time >= 10000000000)
-				MessageBox(NULL, L"输入范围在0~9999999999之间", L"FBI Warning!", MB_OK);
-			else if (count_time == 9999999999)
-				MessageBox(NULL, L"经计算，您可能至少需要等10代人的时间才能实现一次单击", L"FBI Warning!", MB_OK);
-			else if (count_time >= 2491344000)
-				MessageBox(NULL, L"您知道人类平均寿命在79年吗？", L"FBI Warning!", MB_OK);
+			if (count_time < 0 || count_time >= 100000)
+				MessageBox(NULL, L"输入范围在0~100000之间", L"FBI Warning!", MB_OK);
 			else
 			{
-				count_time *= 1000;
 				SendMessage(hwnd, WM_CLOSE, NULL, NULL);
 				SendMessage(main_win, WM_SYSCOMMAND, SC_MINIMIZE, NULL);
 				std::thread click(Click, count_time);
 				Sleep(1000);
 				click.detach();
 				Sleep(10);
-				temp.ReleaseBuffer(10);
+				temp.ReleaseBuffer(7);
 			}
 			break;
 		}
@@ -1007,6 +1015,7 @@ LRESULT CALLBACK TimeWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+/*更改按键提示窗口*/
 LRESULT CALLBACK TipsProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND text;
@@ -1020,10 +1029,10 @@ LRESULT CALLBACK TipsProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_CTLCOLORSTATIC:
 	{
-		if ((HWND)lParam == GetDlgItem(hwnd, 1))//获得指定标签句柄用来对比
+		if ((HWND)lParam == GetDlgItem(hwnd, 1))
 		{
-			SetTextColor((HDC)wParam, RGB(0, 0, 0));//设置文本颜色
-			SetBkMode((HDC)wParam, TRANSPARENT);//设置背景透明
+			SetTextColor((HDC)wParam, RGB(0, 0, 0));
+			SetBkMode((HDC)wParam, TRANSPARENT);
 		}
 		return (INT_PTR)GetStockObject((NULL_BRUSH));
 		break;
@@ -1041,6 +1050,7 @@ LRESULT CALLBACK TipsProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+/*主窗口*/
 LRESULT CALLBACK WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hwndButton1, hwndButton2, hwndButton3, hwndButton4, text;
@@ -1063,10 +1073,10 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_CTLCOLORSTATIC:
 	{
-		if ((HWND)lParam == GetDlgItem(hwnd, 1))//获得指定标签句柄用来对比
+		if ((HWND)lParam == GetDlgItem(hwnd, 1))
 		{
-			SetTextColor((HDC)wParam, RGB(0, 0, 0));//设置文本颜色
-			SetBkMode((HDC)wParam, TRANSPARENT);//设置背景透明
+			SetTextColor((HDC)wParam, RGB(0, 0, 0));
+			SetBkMode((HDC)wParam, TRANSPARENT);
 		}
 		return (INT_PTR)GetStockObject((NULL_BRUSH));
 		break;
@@ -1149,6 +1159,7 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 							input_success = true;
 							input.close();
+							
 							std::thread display(Display);
 							Sleep(10);
 							display.detach();
