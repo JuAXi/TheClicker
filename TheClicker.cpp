@@ -4,7 +4,13 @@
 #include <thread>
 #include <fstream>
 #include <ShlObj.h>
-#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")	//¸ü¸ÄUI		//Change UI
+
+#ifdef x86
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
+#ifdef x64
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='amd64' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
 
 CString version = L"TheClicker1.3";
 CString add = L"https://github.com/JuAXi/TheClicker";
