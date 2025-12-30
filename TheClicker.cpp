@@ -12,7 +12,7 @@
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='amd64' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 
-CString version = L"TheClicker1.3";
+CString version = L"TheClicker1.3.1";
 CString add = L"https://github.com/JuAXi/TheClicker";
 
 #define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1:0)
